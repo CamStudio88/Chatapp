@@ -53,4 +53,51 @@ export default function Home() {
       <div style={{ height: '50vh', overflowY: 'auto', marginBottom: 10, border: '1px solid #ddd', padding: 10, borderRadius: 5 }}>
         {messages
           .filter(m => m.role !== 'system')
-          .map((
+          .map((msg, i) => (
+            <div key={i} style={{ margin: '10px 0', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
+              <div
+                style={{
+                  display: 'inline-block',
+                  padding: '8px 12px',
+                  borderRadius: 15,
+                  backgroundColor: msg.role === 'user' ? '#cce5ff' : '#f8d7da',
+                  color: '#333'
+                }}
+              >
+                {msg.content}
+              </div>
+            </div>
+        ))}
+        {loading && <div>Typing...</div>}
+      </div>
+      <input
+        type="text"
+        placeholder="Type a flirty message..."
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyPress}
+        style={{
+          width: '100%',
+          padding: 10,
+          borderRadius: 5,
+          border: '1px solid #ccc',
+          marginBottom: 10
+        }}
+      />
+      <button
+        onClick={sendMessage}
+        style={{
+          width: '100%',
+          padding: 10,
+          backgroundColor: '#ff69b4',
+          border: 'none',
+          color: 'white',
+          fontWeight: 'bold',
+          borderRadius: 5
+        }}
+      >
+        Send 💌
+      </button>
+    </div>
+  );
+}
