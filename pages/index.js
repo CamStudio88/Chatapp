@@ -1,102 +1,105 @@
+// pages/index.js
+
 import { useState } from 'react';
 
 export default function Home() {
-  const [messages, setMessages] = useState([
-    { role: 'system', content: 'You are a flirty, fun, and seductive chatbot for webcam viewers.' }
-  ]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState([]);
 
-  const sendMessage = async () => {
+  async function sendMessage() {
     if (!input.trim()) return;
 
-    const newMessages = [...messages, { role: 'user', content: input }];
-    setMessages(newMessages);
-    setInput('');
-    setLoading(true);
+    // Add user message to chat
+    setMessages((msgs) => [...msgs, { sender: 'user', text: input }]);
 
+    // Call Netlify function
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/.netlify/functions/chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: newMessages })
+        body: JSON.stringify({ prompt: input }),
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Server responded with: ${errorText}`);
+        throw new Error(`Error: ${res.status}`);
       }
 
       const data = await res.json();
 
-      setMessages([...newMessages, { role: 'assistant', content: data.result }]);
-    } catch (err) {
-      console.error('Error calling chat API:', err.message);
-      setMessages([
-        ...newMessages,
-        { role: 'assistant', content: "Oops! Something went wrong. Try again later." }
-      ]);
-    } finally {
-      setLoading(false);
+      // Add AI response to chat
+      setMessages((msgs) => [...msgs, { sender: 'ai', text: data.response || data.message }]);
+    } catch (error) {
+      setMessages((msgs) => [...msgs, { sender: 'ai', text: 'Oops, something went wrong.' }]);
+      console.error('API call error:', error);
     }
-  };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') sendMessage();
-  };
+    setInput('');
+  }
 
   return (
-    <div style={{ padding: 20, fontFamily: 'sans-serif', maxWidth: 500, margin: 'auto' }}>
-      <h2>💋 Cam Model AI Chat</h2>
-      <div style={{ height: '50vh', overflowY: 'auto', marginBottom: 10, border: '1px solid #ddd', padding: 10, borderRadius: 5 }}>
-        {messages
-          .filter(m => m.role !== 'system')
-          .map((msg, i) => (
-            <div key={i} style={{ margin: '10px 0', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
-              <div
-                style={{
-                  display: 'inline-block',
-                  padding: '8px 12px',
-                  borderRadius: 15,
-                  backgroundColor: msg.role === 'user' ? '#cce5ff' : '#f8d7da',
-                  color: '#333'
-                }}
-              >
-                {msg.content}
-              </div>
-            </div>
+    <div style={{ maxWidth: 600, margin: 'auto', padding: 20, fontFamily: 'Arial' }}>
+      <h1>Cam Model AI Chat</h1>
+      <div
+        style={{
+          border: '1px solid #ccc',
+          padding: 10,
+          height: 400,
+          overflowY: 'auto',
+          marginBottom: 10,
+          background: '#f9f9f9',
+        }}
+      >
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            style={{
+              textAlign: msg.sender === 'user' ? 'right' : 'left',
+              margin: '8px 0',
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-block',
+                padding: '8px 12px',
+                borderRadius: 16,
+                background: msg.sender === 'user' ? '#007bff' : '#eee',
+                color: msg.sender === 'user' ? '#fff' : '#000',
+                maxWidth: '80%',
+                wordWrap: 'break-word',
+              }}
+            >
+              {msg.text}
+            </span>
+          </div>
         ))}
-        {loading && <div>Typing...</div>}
       </div>
       <input
         type="text"
-        placeholder="Type a flirty message..."
+        placeholder="Type your message..."
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyPress}
-        style={{
-          width: '100%',
-          padding: 10,
-          borderRadius: 5,
-          border: '1px solid #ccc',
-          marginBottom: 10
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') sendMessage();
         }}
+        style={{ width: '100%', padding: 10, fontSize: 16, boxSizing: 'border-box' }}
       />
       <button
         onClick={sendMessage}
         style={{
+          marginTop: 10,
           width: '100%',
-          padding: 10,
-          backgroundColor: '#ff69b4',
-          border: 'none',
+          padding: 12,
+          fontSize: 16,
+          backgroundColor: '#007bff',
           color: 'white',
-          fontWeight: 'bold',
-          borderRadius: 5
+          border: 'none',
+          borderRadius: 4,
+          cursor: 'pointer',
         }}
       >
-        Send 💌
+        Send
       </button>
     </div>
   );
