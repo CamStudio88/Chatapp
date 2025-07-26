@@ -1,63 +1,56 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 export default function Home() {
-  const [input, setInput] = useState("");
-  const [chatLog, setChatLog] = useState([]);
+  const [messages, setMessages] = useState([
+    { role: 'system', content: 'You are a flirty, fun, and seductive chatbot for webcam viewers.' }
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  async function sendMessage() {
+  const sendMessage = async () => {
     if (!input.trim()) return;
-    setChatLog([...chatLog, { sender: "user", text: input }]);
-    setInput("");
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: input }),
-    });
+    const newMessages = [...messages, { role: 'user', content: input }];
+    setMessages(newMessages);
+    setInput('');
+    setLoading(true);
 
-    const data = await res.json();
-    if (data.reply) {
-      setChatLog((prev) => [...prev, { sender: "bot", text: data.reply }]);
-    } else {
-      setChatLog((prev) => [...prev, { sender: "bot", text: "Error: No response" }]);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ messages: newMessages })
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Server responded with: ${errorText}`);
+      }
+
+      const data = await res.json();
+
+      setMessages([...newMessages, { role: 'assistant', content: data.result }]);
+    } catch (err) {
+      console.error('Error calling chat API:', err.message);
+      setMessages([
+        ...newMessages,
+        { role: 'assistant', content: "Oops! Something went wrong. Try again later." }
+      ]);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') sendMessage();
+  };
 
   return (
-    <div style={{ maxWidth: 600, margin: "auto", padding: 20 }}>
-      <h1>Cam Model AI Chat</h1>
-      <div
-        style={{
-          border: "1px solid #ccc",
-          height: 400,
-          overflowY: "scroll",
-          padding: 10,
-          marginBottom: 10,
-          borderRadius: 5,
-        }}
-      >
-        {chatLog.map((chat, i) => (
-          <div
-            key={i}
-            style={{
-              textAlign: chat.sender === "user" ? "right" : "left",
-              margin: "5px 0",
-            }}
-          >
-            <b>{chat.sender === "user" ? "You" : "AI"}:</b> {chat.text}
-          </div>
-        ))}
-      </div>
-      <input
-        type="text"
-        placeholder="Type your message"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        style={{ width: "80%", padding: 8 }}
-      />
-      <button onClick={sendMessage} style={{ padding: "8px 16px", marginLeft: 10 }}>
-        Send
-      </button>
-    </div>
-  );
-}
+    <div style={{ padding: 20, fontFamily: 'sans-serif', maxWidth: 500, margin: 'auto' }}>
+      <h2>💋 Cam Model AI Chat</h2>
+      <div style={{ height: '50vh', overflowY: 'auto', marginBottom: 10, border: '1px solid #ddd', padding: 10, borderRadius: 5 }}>
+        {messages
+          .filter(m => m.role !== 'system')
+          .map((
