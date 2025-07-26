@@ -11,6 +11,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: "Missing OpenAI API key in environment" });
+  }
+
   const { message } = req.body;
 
   if (!message) {
@@ -31,6 +35,6 @@ export default async function handler(req, res) {
     res.status(200).json({ reply: responseMessage });
   } catch (error) {
     console.error("OpenAI error:", error.response?.data || error.message);
-    res.status(500).json({ error: "OpenAI request failed" });
+    res.status(500).json({ error: "OpenAI request failed", details: error.response?.data || error.message });
   }
 }
