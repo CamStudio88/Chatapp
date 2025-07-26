@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ reply: responseMessage });
   } catch (error) {
-    console.error("OpenAI error:", error);
+    console.error("OpenAI error:", error.response?.data || error.message);
     res.status(500).json({ error: "OpenAI request failed" });
   }
 }
